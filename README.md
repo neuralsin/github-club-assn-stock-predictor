@@ -31,7 +31,10 @@ Instead of evaluating whether tomorrow's close exceeds today's close by an arbit
 - **Vertical Time Barrier:** $t + h_{\max}$ (default: 5 trading days)
 
 Where $\sigma_t$ represents the asset's trailing 20-day exponentially weighted standard deviation of returns:
-$$\sigma_t = \sqrt{\sum_{i=0}^\infty \alpha(1-\alpha)^i (r_{t-i} - \mu)^2}$$
+
+$$
+\sigma_t = \sqrt{\sum_{i=0}^\infty \alpha(1-\alpha)^i (r_{t-i} - \mu)^2}
+$$
 
 If the price hits $U_t$ first, the event is labeled $1$ ($\text{Up}$). If $L_t$ is struck first, the event is labeled $0$ ($\text{Down}$). If neither barrier is touched prior to expiration $t + h_{\max}$, the label is assigned by the sign of the realized return at $t + h_{\max}$.
 
@@ -39,16 +42,29 @@ Every barrier search for date $t$ queries only observations $t+1 \le \tau \le t 
 
 ### 2.2 Memory-Preserving Fractional Differentiation (FFD)
 Integer differencing $(1-B)^1 X_t$ erases multi-month trend information. Using binomial expansion, the fractional differentiation operator $(1-B)^d$ is defined as:
-$$(1-B)^d = \sum_{k=0}^\infty (-1)^k \binom{d}{k} B^k = 1 - d B + \frac{d(d-1)}{2!} B^2 - \frac{d(d-1)(d-2)}{3!} B^3 + \dots$$
+
+$$
+(1-B)^d = \sum_{k=0}^\infty (-1)^k \binom{d}{k} B^k = 1 - d B + \frac{d(d-1)}{2!} B^2 - \frac{d(d-1)(d-2)}{3!} B^3 + \dots
+$$
 
 Weights are calculated recursively:
-$$w_k = -w_{k-1} \frac{d - k + 1}{k}, \quad w_0 = 1$$
+
+$$
+w_k = -w_{k-1} \frac{d - k + 1}{k}, \quad w_0 = 1
+$$
 
 Weights are truncated when $|w_k| < 10^{-4}$ to establish a fixed backward-looking convolutional window of width $W$. We perform a grid search over $d \in [0.1, 0.8]$ to identify the minimal $d$ that passes the Augmented Dickey-Fuller (ADF) stationarity test at $p < 0.05$:
-$$\min d \quad \text{s.t.} \quad p_{\text{ADF}}(\tilde{X}^{(d)}) < 0.05$$
+
+$$
+\min d \quad \text{s.t.} \quad p_{\text{ADF}}(\tilde{X}^{(d)}) < 0.05
+$$
 
 For our benchmark dataset (SPY 2016–2023), the optimal order selected is:
-$$\mathbf{d^* = 0.30} \quad (p < 0.05)$$
+
+$$
+\mathbf{d^*} = 0.30 \quad (p < 0.05)
+$$
+
 preserving substantial long-memory autocorrelation while guaranteeing econometric stationarity.
 
 ### 2.3 Causal Dilated Temporal Convolutional Network (TCN)
@@ -57,11 +73,17 @@ Sequence modeling via standard Recurrent Neural Networks (RNN/LSTM) is computati
 - **Right-Side Chomp:** A custom slice layer strips any right-hand padding, guaranteeing that the activation at time index $t$ depends strictly on $t, t-1, t-2, \dots$ and never on $t+1$.
 - **Residual Blocks:** Two dilated 1D conv layers with weight normalization, ReLU non-linearities, spatial dropout, and residual identity mappings.
 - **Receptive Field:**
-  $$\text{Receptive Field} = 1 + \sum_{i=0}^{L-1} (K-1) \cdot 2^i$$
+
+$$
+\text{Receptive Field} = 1 + \sum_{i=0}^{L-1} (K-1) \cdot 2^i
+$$
 
 ### 2.4 Stacked LightGBM Meta-Learner
 To prevent meta-model data leakage, out-of-fold probability predictions from the TCN are stacked with the stationary tabular indicator set:
-$$\mathbf{X}_{\text{meta}} = \left[ \hat{P}_{\text{TCN}}(\text{Up} \mid \mathbf{X}_{t-w:t}), \; \tilde{C}_t^{(d^*)}, \; \text{RSI}_{14}, \; \Delta\text{MACD}_t, \; \%B_t, \; \sigma_{20d}, \; Z_{\text{vol}} \right]$$
+
+$$
+\mathbf{X}_{\text{meta}} = \left[ \hat{P}_{\text{TCN}}(\text{Up} \mid \mathbf{X}_{t-w:t}), \; \tilde{C}_t^{(d^*)}, \; \text{RSI}_{14}, \; \Delta\text{MACD}_t, \; \text{BB}_{\text{pctb}}, \; \sigma_{20d}, \; Z_{\text{vol}} \right]
+$$
 
 A regularized LightGBM classifier trains on this augmented feature representation, learning non-linear interactions between sequence dynamics and instantaneous technical levels.
 
@@ -75,8 +97,15 @@ Standard $k$-fold cross-validation leaks information when labels have variable t
 ### 2.6 Selection-Bias Statistical Testing (DSR & PBO)
 When running multiple cross-validation splits, the highest observed Sharpe ratio is subject to selection bias under multiple testing.
 - **Deflated Sharpe Ratio (DSR):** Computes the probability that the maximum observed Sharpe ratio $\widehat{\text{SR}}^*$ is statistically genuine after adjusting for the number of trials $M$ and variance across trials:
-  $$\mathbb{E}[\max_{m=1\dots M} \text{SR}_m] \approx \sigma_{\text{SR}} \left( (1-\gamma)\Phi^{-1}\left(1 - \frac{1}{M}\right) + \gamma \Phi^{-1}\left(1 - \frac{1}{M e}\right) \right)$$
-  $$\text{DSR} = \Phi\left( \frac{\widehat{\text{SR}}^* - \mathbb{E}[\max \text{SR}]}{\sigma_{\widehat{\text{SR}}}} \right)$$
+
+$$
+\mathbb{E}\left[\max_{m=1\dots M} \text{SR}_m\right] \approx \sigma_{\text{SR}} \left( (1-\gamma)\Phi^{-1}\left(1 - \frac{1}{M}\right) + \gamma \Phi^{-1}\left(1 - \frac{1}{M e}\right) \right)
+$$
+
+$$
+\text{DSR} = \Phi\left( \frac{\widehat{\text{SR}}^* - \mathbb{E}[\max \text{SR}]}{\sigma_{\widehat{\text{SR}}}} \right)
+$$
+
   where $\gamma \approx 0.5772$ (Euler-Mascheroni constant).
 - **Probability of Backtest Overfitting (PBO):** Determines the frequency with which the best performing in-sample fold ranks below the median out-of-sample.
 
