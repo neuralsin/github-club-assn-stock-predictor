@@ -1,0 +1,5 @@
+Model,Accuracy,Precision,Recall,F1 Score
+Persistence Baseline,0.5016,0.5854,0.5333,0.5581
+Majority Class,0.5902,0.5902,1.0,0.7423
+Raw Features (LightGBM),0.5082,0.5758,0.6333,0.6032
+Engineered Stack (TCN + LightGBM),0.5082,0.575,0.6389,0.6053
