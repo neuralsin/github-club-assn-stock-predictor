@@ -34,18 +34,3 @@ def deflated_sharpe_ratio(
     z_score = (observed_sr - expected_max_sr) / sr_std
     return float(norm.cdf(z_score))
 
-def probability_of_backtest_overfitting(is_sharpes: list[float], oos_sharpes: list[float]) -> float:
-    is_arr = np.asarray(is_sharpes)
-    oos_arr = np.asarray(oos_sharpes)
-
-    if len(is_arr) == 0 or len(oos_arr) == 0:
-        return 0.0
-
-    best_is_idx = int(np.argmax(is_arr))
-    best_oos_val = oos_arr[best_is_idx]
-    oos_median = np.median(oos_arr)
-
-    pbo = float(np.mean(oos_arr < best_oos_val))
-    if best_oos_val < oos_median:
-        return max(pbo, float(np.mean(oos_arr >= best_oos_val)))
-    return float(1.0 - pbo)

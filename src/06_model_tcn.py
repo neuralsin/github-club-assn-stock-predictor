@@ -78,7 +78,8 @@ def train_tcn(
     device: str = "cpu",
 ):
     model.to(device)
-    opt = torch.optim.Adam(model.parameters(), lr=lr)
+    opt = torch.optim.AdamW(model.parameters(), lr=lr, weight_decay=1e-4)
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(opt, T_max=epochs, eta_min=lr * 0.05)
     loss_fn = nn.BCELoss()
     train_ds = torch.utils.data.TensorDataset(X_train, y_train)
     loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, shuffle=True)
@@ -94,7 +95,10 @@ def train_tcn(
             pred = model(xb)
             loss = loss_fn(pred, yb)
             loss.backward()
+            torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
             opt.step()
+
+        scheduler.step()
 
         if len(X_val) > 0:
             model.eval()

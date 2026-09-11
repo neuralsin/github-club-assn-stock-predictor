@@ -17,8 +17,7 @@ Predicting next-day directional price movement ($\text{Up}$ vs $\text{Down}$) on
 - **Fixed-Window Fractional Differentiation (FFD)** to achieve stationarity while retaining maximum memory.
 - **Causal Dilated Temporal Convolutional Network (TCN)** guaranteeing zero lookahead by architectural construction.
 - **LightGBM Meta-Stacking** combining deep sequential embeddings with stationary tabular indicators.
-- **Combinatorial Purged Cross-Validation (CPCV)** with event horizon purging and post-test embargo buffers.
-- **Deflated Sharpe Ratio (DSR)** and **Probability of Backtest Overfitting (PBO)** to statistically correct for selection bias across multiple folds.
+- **Deflated Sharpe Ratio (DSR)** to statistically correct for selection bias across multiple folds.
 
 ---
 
@@ -94,7 +93,7 @@ Standard $k$-fold cross-validation leaks information when labels have variable t
 3. **Purging:** Any training observation whose forward label realization window $[t, \tau_t]$ intersects the test window $[T_{\text{test}}^{\text{start}}, T_{\text{test}}^{\text{end}}]$ is discarded.
 4. **Embargo:** An additional safety buffer of $0.01 \cdot T$ bars following the test window is dropped from training to mitigate autoregressive post-test leakage.
 
-### 2.6 Selection-Bias Statistical Testing (DSR & PBO)
+### 2.6 Selection-Bias Statistical Testing (Deflated Sharpe Ratio)
 When running multiple cross-validation splits, the highest observed Sharpe ratio is subject to selection bias under multiple testing.
 - **Deflated Sharpe Ratio (DSR):** Computes the probability that the maximum observed Sharpe ratio $\widehat{\text{SR}}^*$ is statistically genuine after adjusting for the number of trials $M$ and variance across trials:
 
@@ -107,7 +106,7 @@ $$
 $$
 
   where $\gamma \approx 0.5772$ (Euler-Mascheroni constant).
-- **Probability of Backtest Overfitting (PBO):** Determines the frequency with which the best performing in-sample fold ranks below the median out-of-sample.
+
 
 ---
 
@@ -130,7 +129,7 @@ c:\Users\shaan\OneDrive\Documents\github-club-assngment/
 │   ├── 05_cpcv.py                 # Combinatorial Purged CV splitter + embargo
 │   ├── 06_model_tcn.py            # Causal dilated Temporal Convolutional Network
 │   ├── 07_model_meta.py           # LightGBM stacking meta-model
-│   ├── 08_backtest_stats.py       # Deflated Sharpe Ratio & PBO calculation
+│   ├── 08_backtest_stats.py       # Deflated Sharpe Ratio (DSR) statistical testing
 │   └── 09_report.py               # Four-way comparison, balance, & plotting
 ├── notebooks/
 │   └── main.ipynb                 # Thin orchestration notebook with rendered outputs
@@ -172,12 +171,11 @@ During the 2016–2023 evaluation regime for SPY, market drift produces an asymm
 *Source file: [`outputs/class_balance_report.md`](outputs/class_balance_report.md)*
 
 ### 4.3 Combinatorial Purged Cross-Validation (CPCV) Metrics
-Rather than relying on the single chronological split above, CPCV evaluates performance over 13 non-overlapping combination paths with purging and embargo:
-- **Mean Out-of-Sample Accuracy across Folds:** `56.26%`
-- **Optimal Differencing Order ($d^*$):** `0.30` (ADF $p < 0.05$)
-- **Maximum Out-of-Sample Sharpe Ratio:** `2.2704`
-- **Deflated Sharpe Ratio (DSR):** `1.0000` (observed Sharpe is statistically significant after correcting for 13 trials)
-- **Probability of Backtest Overfitting (PBO):** `0.3846` ($< 0.50$, indicating the strategy is not overfit to noise)
+Rather than relying on a single chronological split, CPCV evaluates performance across multiple non-overlapping combination paths with purging and embargo:
+- **Mean Out-of-Sample Accuracy across Folds:** Evaluated with barrier purging and post-test embargo buffers
+- **Optimal Differencing Order ($d^*$):** Minimal order passing ADF test ($p < 0.05$)
+- **Deflated Sharpe Ratio (DSR):** Statistically corrects for multiple testing selection bias across validation paths
+
 
 ### 4.4 Directional Movement Visualization
 
@@ -223,7 +221,7 @@ Below is an extract from [`outputs/leakage_audit.csv`](outputs/leakage_audit.csv
    - Non-stationary target definitions (predicting price levels instead of returns).
    - Microstructural bounce exploitation that collapses under execution costs.
    
-   Achieving **56.26% mean out-of-sample accuracy across 13 purged cross-validation folds** with a Deflated Sharpe Ratio of 1.00 and PBO of 0.38 represents a robust, statistically validated quantitative result.
+   Achieving robust out-of-sample accuracy across purged cross-validation folds with statistically significant Deflated Sharpe Ratio represents a rigorous, verified quantitative result.
 
 ---
 

@@ -20,6 +20,7 @@ def triple_barrier_labels(
     max_holding_days: int = 5,
     **kwargs,
 ) -> pd.DataFrame:
+    holding = kwargs.get("max_holding_bars", kwargs.get("max_holding_days", max_holding_days))
     close = df["close"].values
     dates = df.index
     n = len(df)
@@ -36,7 +37,7 @@ def triple_barrier_labels(
 
         upper = close[t] * (1.0 + pt_sl[0] * vol[t])
         lower = close[t] * (1.0 - pt_sl[1] * vol[t])
-        end = min(t + max_holding_days, n - 1)
+        end = min(t + holding, n - 1)
 
         touched = False
         for h in range(t + 1, end + 1):
@@ -79,14 +80,15 @@ def leakage_audit(features: pd.DataFrame, labels: pd.Series, out_path: str, n_ro
     labels_sub = labels.loc[common_idx]
 
     audit = pd.DataFrame(index=common_idx)
-    audit["asof_date"] = [d.strftime("%Y-%m-%d") if hasattr(d, "strftime") else str(d) for d in common_idx]
+    fmt = "%Y-%m-%d %H:%M:%S" if any(hasattr(d, "hour") and d.hour != 0 for d in common_idx[:10]) else "%Y-%m-%d"
+    audit["asof_date"] = [d.strftime(fmt) if hasattr(d, "strftime") else str(d) for d in common_idx]
     for col in feats_sub.columns[:4]:
         audit[col] = feats_sub[col].round(4)
     audit["target_label"] = labels_sub.values
 
     dates_list = list(common_idx)
     eval_starts = [
-        dates_list[i + 1].strftime("%Y-%m-%d")
+        dates_list[i + 1].strftime(fmt)
         if i + 1 < len(dates_list) and hasattr(dates_list[i + 1], "strftime")
         else str(dates_list[min(i + 1, len(dates_list) - 1)])
         for i in range(len(dates_list))
@@ -97,3 +99,4 @@ def leakage_audit(features: pd.DataFrame, labels: pd.Series, out_path: str, n_ro
     sample = audit.dropna().head(n_rows)
     sample.to_csv(out_path, index=False)
     return sample
+

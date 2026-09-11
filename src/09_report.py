@@ -1,14 +1,40 @@
 from pathlib import Path
 import matplotlib.pyplot as plt
 import pandas as pd
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score
+from sklearn.metrics import (
+    accuracy_score,
+    f1_score,
+    precision_score,
+    recall_score,
+    roc_auc_score,
+    average_precision_score,
+)
 
-def four_way_comparison(y_true, preds: dict, out_path: str = None) -> pd.DataFrame:
+def four_way_comparison(y_true, preds: dict, probs: dict = None, out_path: str = None) -> pd.DataFrame:
     rows = []
     for model_name, pred_values in preds.items():
+        auc_val = 0.5000
+        pr_auc_val = round(float(pd.Series(y_true).mean()), 4)
+
+        if probs and model_name in probs and probs[model_name] is not None:
+            p = probs[model_name]
+            try:
+                auc_val = round(float(roc_auc_score(y_true, p)), 4)
+                pr_auc_val = round(float(average_precision_score(y_true, p)), 4)
+            except Exception:
+                pass
+        else:
+            try:
+                auc_val = round(float(roc_auc_score(y_true, pred_values)), 4)
+                pr_auc_val = round(float(average_precision_score(y_true, pred_values)), 4)
+            except Exception:
+                pass
+
         rows.append(
             {
                 "Model": model_name,
+                "ROC-AUC": auc_val,
+                "PR-AUC": pr_auc_val,
                 "Accuracy": round(float(accuracy_score(y_true, pred_values)), 4),
                 "Precision": round(float(precision_score(y_true, pred_values, zero_division=0)), 4),
                 "Recall": round(float(recall_score(y_true, pred_values, zero_division=0)), 4),
@@ -20,6 +46,7 @@ def four_way_comparison(y_true, preds: dict, out_path: str = None) -> pd.DataFra
         Path(out_path).parent.mkdir(parents=True, exist_ok=True)
         df_table.to_csv(out_path, index=False)
     return df_table
+
 
 def class_balance_report(labels: pd.Series, out_path: str = None) -> str:
     clean_labels = labels.dropna().astype(int)

@@ -9,9 +9,16 @@ def build_meta_dataset(oof_tcn_probs: np.ndarray, tabular_features: pd.DataFrame
 
 def train_meta_model(meta_X_train, y_train, params: dict = None) -> lgb.LGBMClassifier:
     default_params = {
+        "objective": "binary",
+        "metric": "auc",
         "num_leaves": 31,
-        "learning_rate": 0.05,
-        "n_estimators": 150,
+        "learning_rate": 0.03,
+        "n_estimators": 250,
+        "subsample": 0.8,
+        "colsample_bytree": 0.8,
+        "min_child_samples": 30,
+        "reg_alpha": 0.1,
+        "reg_lambda": 1.0,
         "random_state": 42,
         "verbose": -1,
     }
@@ -23,3 +30,4 @@ def train_meta_model(meta_X_train, y_train, params: dict = None) -> lgb.LGBMClas
     model = lgb.LGBMClassifier(**default_params)
     model.fit(meta_X_train, y_train)
     return model
+

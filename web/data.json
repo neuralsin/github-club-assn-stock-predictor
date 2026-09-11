@@ -1,0 +1,52 @@
+{
+  "ticker": "TATAELXSI",
+  "regime": "2024-06-26 to 2026-01-14",
+  "total_bars": 27623,
+  "analyzed_samples": 27126,
+  "cpcv_mean_acc": 0.5149,
+  "optimal_d": 0.2,
+  "max_oos_sharpe": 0.601,
+  "dsr": 0.0,
+  "class_0_count": 14071,
+  "class_0_pct": 51.87,
+  "class_1_count": 13055,
+  "class_1_pct": 48.13,
+  "comparison_table": [
+    {
+      "Model": "Persistence Baseline",
+      "ROC-AUC": 0.4874,
+      "PR-AUC": 0.4665,
+      "Accuracy": 0.4896,
+      "Precision": 0.459,
+      "Recall": 0.4474,
+      "F1 Score": 0.4531
+    },
+    {
+      "Model": "Majority Class",
+      "ROC-AUC": 0.5,
+      "PR-AUC": 0.4726,
+      "Accuracy": 0.5274,
+      "Precision": 0.0,
+      "Recall": 0.0,
+      "F1 Score": 0.0
+    },
+    {
+      "Model": "Raw Features (LightGBM)",
+      "ROC-AUC": 0.5246,
+      "PR-AUC": 0.4923,
+      "Accuracy": 0.5255,
+      "Precision": 0.4979,
+      "Recall": 0.4705,
+      "F1 Score": 0.4838
+    },
+    {
+      "Model": "Engineered Stack (TCN + LightGBM)",
+      "ROC-AUC": 0.5159,
+      "PR-AUC": 0.4907,
+      "Accuracy": 0.5089,
+      "Precision": 0.4803,
+      "Recall": 0.4759,
+      "F1 Score": 0.4781
+    }
+  ]
+}
